@@ -83,6 +83,12 @@ namespace AasxServerBlazor.Data
                     Entity entity = subModelElementWrapper.submodelElement as Entity;
                     CreateViewFromEntity(subModelElementTreeNodeData, entity, i);
                 }
+
+                if (subModelElementWrapper.submodelElement.idShort == "CAEX" || subModelElementWrapper.submodelElement.idShort == "AMLFile")
+
+                {
+                    CreateViewFromAMLCAEXFile(subModelElementTreeNodeData, subModelElementWrapper.submodelElement.ValueAsText(), i);
+                }
             }
 
             rootItem.Children = subModelElementTreeNodeDataList;
@@ -130,10 +136,24 @@ namespace AasxServerBlazor.Data
                         CreateViewFromUACloudLibraryNodeset(smeItem, new Uri(subModelElementWrapper.submodelElement.ValueAsText()), i);
                     }
 
-                    if (subModelElementWrapper.submodelElement.idShort == "CAEX")
+                    if (subModelElementWrapper.submodelElement.idShort == "CAEX" || subModelElementWrapper.submodelElement.idShort == "AMLFile")
 
                     {
                         CreateViewFromAMLCAEXFile(smeItem, subModelElementWrapper.submodelElement.ValueAsText(), i);
+                    }
+
+                    if(subModelElementWrapper.submodelElement is RelationshipElement)
+                    {
+                        if(subModelElementWrapper.submodelElement.idShort == "RefToInternalElementInAML")
+                        {
+                            CreateViewFromRefToInternalElementInAML(smeItem, (RelationshipElement)subModelElementWrapper.submodelElement, i);
+                        } else if (subModelElementWrapper.submodelElement.idShort == "RefToAttrbuteInAML")
+                        {
+                            CreateViewFromRefToAttrbuteInAML(smeItem, (RelationshipElement)subModelElementWrapper.submodelElement, i);
+                        } else
+                        {
+                            //Nothing to do for now
+                        }
                     }
                 }
             }
@@ -146,13 +166,100 @@ namespace AasxServerBlazor.Data
             }
         }
 
+        private void CreateViewFromRefToInternalElementInAML(TreeNodeData rootItem, RelationshipElement refToInternalElement, int i)
+        {
+
+            //refToInternalElement.second
+
+            
+
+            List<TreeNodeData> treeNodeDataList = new List<TreeNodeData>();
+
+            foreach (Key k in refToInternalElement.first.Keys)
+            {
+                TreeNodeData smeItem = new TreeNodeData();
+                smeItem.EnvIndex = i;
+                smeItem.Text = k.idType + " - " + k.value;
+                smeItem.Type = "First";
+                smeItem.Tag = new SubmodelElement() { idShort = k.value };
+                smeItem.Children = new List<TreeNodeData>();
+                treeNodeDataList.Add(smeItem);
+
+                if (k.idType == "Custom" && k.value.StartsWith("AML@id"))
+                {
+                    Aml.Engine.Services.QueryService qservice = new Aml.Engine.Services.QueryService();
+                    CAEXObject obj = qservice.FindByID(doc, k.value.Replace("AML@id=", ""));
+                    if(obj != null && obj is InternalElementType)
+                    {
+                        CreateViewFromInternalElement(smeItem, (List<TreeNodeData>)smeItem.Children, (InternalElementType)obj, i);
+                    }
+                }
+            }
+
+            foreach (Key k in refToInternalElement.second.Keys)
+            {
+                TreeNodeData smeItem = new TreeNodeData();
+                smeItem.EnvIndex = i;
+                smeItem.Text = k.idType + " - " + k.value;
+                smeItem.Type = "Second";
+                smeItem.Tag = new SubmodelElement() { idShort = k.value };
+                smeItem.Children = new List<TreeNodeData>();
+                treeNodeDataList.Add(smeItem);
+            }
+
+            rootItem.Children = treeNodeDataList;
+
+
+        }
+
+        private void CreateViewFromRefToAttrbuteInAML(TreeNodeData rootItem, RelationshipElement RefToAttrbuteInAML, int i)
+        {
+
+            //refToInternalElement.second
+
+            
+            List<TreeNodeData> treeNodeDataList = new List<TreeNodeData>();
+
+            foreach(Key k in RefToAttrbuteInAML.first.Keys)
+            {
+                TreeNodeData smeItem = new TreeNodeData();
+                smeItem.EnvIndex = i;
+                smeItem.Text = k.idType + " - " + k.value;
+                smeItem.Type = "First";
+                smeItem.Tag = new SubmodelElement() { idShort = k.value };
+                smeItem.Children = new List<TreeNodeData>();
+                treeNodeDataList.Add(smeItem);
+
+                //if(k.idType == "Custom" && k.value.StartsWith("AML@id"))
+            }
+
+            foreach (Key k in RefToAttrbuteInAML.second.Keys)
+            {
+                TreeNodeData smeItem = new TreeNodeData();
+                smeItem.EnvIndex = i;
+                smeItem.Text = k.idType + " - " + k.value;
+                smeItem.Type = "Second";
+                smeItem.Tag = new SubmodelElement() { idShort = k.value };
+                smeItem.Children = new List<TreeNodeData>();
+                treeNodeDataList.Add(smeItem);
+            }
+
+            rootItem.Children = treeNodeDataList;
+
+
+        }
+
+        //ToDo Now assume that his was called before the references and that this file exsists.
+        CAEXDocument doc = null;
         private void CreateViewFromAMLCAEXFile(TreeNodeData rootItem, string filename, int i)
         {
             try
             {
                 Stream packagePartStream = Program.env[i].GetLocalStreamFromPackage(filename);
-                CAEXDocument doc = CAEXDocument.LoadFromStream(packagePartStream);
+                doc = CAEXDocument.LoadFromStream(packagePartStream);
                 List<TreeNodeData> treeNodeDataList = new List<TreeNodeData>();
+
+                
 
                 foreach (var instanceHirarchy in doc.CAEXFile.InstanceHierarchy)
                 {
@@ -227,10 +334,34 @@ namespace AasxServerBlazor.Data
             smeItem.Children = new List<TreeNodeData>();
             rootItemChildren.Add(smeItem);
 
+            foreach(AttributeType attribute in internalElement.Attribute)
+            {
+                CreateViewFromAmlAttribute(smeItem, (List<TreeNodeData>)smeItem.Children, attribute, i);
+            }
+
             foreach (InternalElementType childInternalElement in internalElement.InternalElement)
             {
                 CreateViewFromInternalElement(smeItem, (List<TreeNodeData>)smeItem.Children, childInternalElement, i);
             }
+        }
+
+        private void CreateViewFromAmlAttribute(TreeNodeData rootItem, List<TreeNodeData> rootItemChildren, AttributeType attribute, int i)
+        {
+            TreeNodeData smeItem = new TreeNodeData();
+            smeItem.EnvIndex = i;
+            smeItem.Text = attribute.Name + " = " + attribute.Value;
+            smeItem.Type = "AML";
+            smeItem.Tag = new SubmodelElement() { idShort = attribute.Name + " = " + attribute.Value };
+            smeItem.Parent = rootItem;
+            smeItem.Children = new List<TreeNodeData>();
+            rootItemChildren.Add(smeItem);
+
+            foreach (AttributeType attributeType in attribute.Attribute)
+            {
+                CreateViewFromAmlAttribute(smeItem, (List<TreeNodeData>)smeItem.Children, attributeType, i);
+            }
+
+            
         }
 
         private void CreateViewFromRoleClasses(TreeNodeData rootItem, List<TreeNodeData> rootItemChildren, RoleFamilyType roleClass, int i)

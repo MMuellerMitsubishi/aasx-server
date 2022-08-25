@@ -70,6 +70,7 @@ namespace AasxDemonstration
                 // init
                 sourceType = ("" + sourceType).Trim().ToLower();
 
+                sourceType = "debug";
                 // debug?
                 if (sourceType == "debug")
                     return new SourceSystemDebug();
@@ -1008,7 +1009,7 @@ namespace AasxDemonstration
             {
                 ;
                 CyclicCheckDataPoints();
-                CyclicCheckTimeSeries();
+                //CyclicCheckTimeSeries();
                 ;
             }
 
