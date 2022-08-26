@@ -230,7 +230,24 @@ namespace AasxServerBlazor.Data
                 smeItem.Children = new List<TreeNodeData>();
                 treeNodeDataList.Add(smeItem);
 
-                //if(k.idType == "Custom" && k.value.StartsWith("AML@id"))
+                if(k.idType == "Custom" && k.value.StartsWith("AML@id"))
+                {
+                    string tmp = k.value.Replace("AML@id=", "");
+                    int idx = tmp.IndexOf(".");
+                    string id = tmp.Substring(0, idx);
+                    string attrName = tmp.Replace(id + ".", "");
+
+                    Aml.Engine.Services.QueryService qservice = new Aml.Engine.Services.QueryService();
+                    CAEXObject obj = qservice.FindByID(doc, id);
+                    if(obj != null && obj is InternalElementType)
+                    {
+                        AttributeType attr = ((InternalElementType)obj).Attribute[attrName];
+                        if(attr != null)
+                        {
+                            CreateViewFromAmlAttribute(smeItem, (List<TreeNodeData>) smeItem.Children, attr, i);
+                        }
+                    }
+                }
             }
 
             foreach (Key k in RefToAttrbuteInAML.second.Keys)
@@ -266,7 +283,7 @@ namespace AasxServerBlazor.Data
                     TreeNodeData smeItem = new TreeNodeData();
                     smeItem.EnvIndex = i;
                     smeItem.Text = instanceHirarchy.ID;
-                    smeItem.Type = "AML";
+                    smeItem.Type = "AML IH";
                     smeItem.Tag = new SubmodelElement() { idShort = instanceHirarchy.Name };
                     smeItem.Children = new List<TreeNodeData>();
                     treeNodeDataList.Add(smeItem);
@@ -282,7 +299,7 @@ namespace AasxServerBlazor.Data
                     TreeNodeData smeItem = new TreeNodeData();
                     smeItem.EnvIndex = i;
                     smeItem.Text = roleclassLib.ID;
-                    smeItem.Type = "AML";
+                    smeItem.Type = "AML RCL";
                     smeItem.Tag = new SubmodelElement() { idShort = roleclassLib.Name };
                     smeItem.Children = new List<TreeNodeData>();
                     treeNodeDataList.Add(smeItem);
@@ -298,7 +315,7 @@ namespace AasxServerBlazor.Data
                     TreeNodeData smeItem = new TreeNodeData();
                     smeItem.EnvIndex = i;
                     smeItem.Text = systemUnitClassLib.ID;
-                    smeItem.Type = "AML";
+                    smeItem.Type = "AML SUCL";
                     smeItem.Tag = new SubmodelElement() { idShort = systemUnitClassLib.Name };
                     smeItem.Children = new List<TreeNodeData>();
                     treeNodeDataList.Add(smeItem);
@@ -328,11 +345,14 @@ namespace AasxServerBlazor.Data
             TreeNodeData smeItem = new TreeNodeData();
             smeItem.EnvIndex = i;
             smeItem.Text = internalElement.ID;
-            smeItem.Type = "AML";
+            smeItem.Type = "AML IE";
             smeItem.Tag = new SubmodelElement() { idShort = internalElement.Name };
             smeItem.Parent = rootItem;
             smeItem.Children = new List<TreeNodeData>();
             rootItemChildren.Add(smeItem);
+
+            //Displaying the assigned role classes for this internal element also in the tree view.
+            CreateViewFromAssignedRoleClasses(smeItem, (List<TreeNodeData>)smeItem.Children, internalElement, i);
 
             foreach(AttributeType attribute in internalElement.Attribute)
             {
@@ -345,12 +365,36 @@ namespace AasxServerBlazor.Data
             }
         }
 
+        private void CreateViewFromAssignedRoleClasses(TreeNodeData rootItem, List<TreeNodeData> rootItemChildren, InternalElementType internalElement, int i)
+        {
+            
+            foreach(RoleRequirementsType rc in internalElement.RoleRequirements)
+            {
+                TreeNodeData smeItem = new TreeNodeData();
+                smeItem.EnvIndex = i;
+                smeItem.Text = rc.RoleClass.Name;
+                smeItem.Type = "RoleReq";
+                smeItem.Tag = new SubmodelElement() { idShort = rc.RoleClass.Name };
+                rootItemChildren.Add(smeItem);
+            }
+            
+            foreach(SupportedRoleClassType rc in internalElement.SupportedRoleClass)
+            {
+                TreeNodeData smeItem = new TreeNodeData();
+                smeItem.EnvIndex = i;
+                smeItem.Text = rc.RoleClass.Name;
+                smeItem.Type = "SupportedRC";
+                smeItem.Tag = new SubmodelElement() { idShort = rc.RoleClass.Name };
+                rootItemChildren.Add(smeItem);
+            }
+        }
+
         private void CreateViewFromAmlAttribute(TreeNodeData rootItem, List<TreeNodeData> rootItemChildren, AttributeType attribute, int i)
         {
             TreeNodeData smeItem = new TreeNodeData();
             smeItem.EnvIndex = i;
             smeItem.Text = attribute.Name + " = " + attribute.Value;
-            smeItem.Type = "AML";
+            smeItem.Type = "AML ATTR";
             smeItem.Tag = new SubmodelElement() { idShort = attribute.Name + " = " + attribute.Value };
             smeItem.Parent = rootItem;
             smeItem.Children = new List<TreeNodeData>();
@@ -369,7 +413,7 @@ namespace AasxServerBlazor.Data
             TreeNodeData smeItem = new TreeNodeData();
             smeItem.EnvIndex = i;
             smeItem.Text = roleClass.ID;
-            smeItem.Type = "AML";
+            smeItem.Type = "AML RC";
             smeItem.Tag = new SubmodelElement() { idShort = roleClass.Name };
             smeItem.Parent = rootItem;
             smeItem.Children = new List<TreeNodeData>();
@@ -386,7 +430,7 @@ namespace AasxServerBlazor.Data
             TreeNodeData smeItem = new TreeNodeData();
             smeItem.EnvIndex = i;
             smeItem.Text = systemUnitClass.ID;
-            smeItem.Type = "AML";
+            smeItem.Type = "AML SUC";
             smeItem.Tag = new SubmodelElement() { idShort = systemUnitClass.Name };
             smeItem.Parent = rootItem;
             smeItem.Children = new List<TreeNodeData>();
