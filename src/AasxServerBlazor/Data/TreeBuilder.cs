@@ -174,19 +174,20 @@ namespace AasxServerBlazor.Data
             
 
             List<TreeNodeData> treeNodeDataList = new List<TreeNodeData>();
-
+            TreeNodeData smeItem;
             foreach (Key k in refToInternalElement.first.Keys)
             {
-                TreeNodeData smeItem = new TreeNodeData();
-                smeItem.EnvIndex = i;
-                smeItem.Text = k.idType + " - " + k.value;
-                smeItem.Type = "First";
-                smeItem.Tag = new SubmodelElement() { idShort = k.value };
-                smeItem.Children = new List<TreeNodeData>();
-                treeNodeDataList.Add(smeItem);
+                
 
                 if (k.idType == "Custom" && k.value.StartsWith("AML@id"))
                 {
+                    smeItem = new TreeNodeData();
+                    smeItem.EnvIndex = i;
+                    smeItem.Text = k.idType + " - " + k.value;
+                    smeItem.Type = "AML Link";
+                    smeItem.Tag = new SubmodelElement() { idShort = k.value };
+                    smeItem.Children = new List<TreeNodeData>();
+                    treeNodeDataList.Add(smeItem);
                     Aml.Engine.Services.QueryService qservice = new Aml.Engine.Services.QueryService();
                     CAEXObject obj = qservice.FindByID(doc, k.value.Replace("AML@id=", ""));
                     if(obj != null && obj is InternalElementType)
@@ -196,16 +197,19 @@ namespace AasxServerBlazor.Data
                 }
             }
 
+            string aas_ref = "";
             foreach (Key k in refToInternalElement.second.Keys)
             {
-                TreeNodeData smeItem = new TreeNodeData();
-                smeItem.EnvIndex = i;
-                smeItem.Text = k.idType + " - " + k.value;
-                smeItem.Type = "Second";
-                smeItem.Tag = new SubmodelElement() { idShort = k.value };
-                smeItem.Children = new List<TreeNodeData>();
-                treeNodeDataList.Add(smeItem);
+                aas_ref += k.value + " ";
             }
+
+            smeItem = new TreeNodeData();
+            smeItem.EnvIndex = i;
+            smeItem.Text = aas_ref;
+            smeItem.Type = "AAS Link";
+            smeItem.Tag = new SubmodelElement() { idShort = aas_ref };
+            smeItem.Children = new List<TreeNodeData>();
+            treeNodeDataList.Add(smeItem);
 
             rootItem.Children = treeNodeDataList;
 
@@ -220,18 +224,20 @@ namespace AasxServerBlazor.Data
             
             List<TreeNodeData> treeNodeDataList = new List<TreeNodeData>();
 
-            foreach(Key k in RefToAttrbuteInAML.first.Keys)
+            TreeNodeData smeItem;
+            foreach (Key k in RefToAttrbuteInAML.first.Keys)
             {
-                TreeNodeData smeItem = new TreeNodeData();
-                smeItem.EnvIndex = i;
-                smeItem.Text = k.idType + " - " + k.value;
-                smeItem.Type = "First";
-                smeItem.Tag = new SubmodelElement() { idShort = k.value };
-                smeItem.Children = new List<TreeNodeData>();
-                treeNodeDataList.Add(smeItem);
-
-                if(k.idType == "Custom" && k.value.StartsWith("AML@id"))
+                if (k.idType == "Custom" && k.value.StartsWith("AML@id"))
                 {
+                    smeItem = new TreeNodeData();
+                    smeItem.EnvIndex = i;
+                    smeItem.Text = k.idType + " - " + k.value;
+                    smeItem.Type = "AML Link";
+                    smeItem.Tag = new SubmodelElement() { idShort = k.value };
+                    smeItem.Children = new List<TreeNodeData>();
+                    treeNodeDataList.Add(smeItem);
+
+                
                     string tmp = k.value.Replace("AML@id=", "");
                     int idx = tmp.IndexOf(".");
                     string id = tmp.Substring(0, idx);
@@ -250,16 +256,19 @@ namespace AasxServerBlazor.Data
                 }
             }
 
+            string aas_ref = "";
             foreach (Key k in RefToAttrbuteInAML.second.Keys)
             {
-                TreeNodeData smeItem = new TreeNodeData();
-                smeItem.EnvIndex = i;
-                smeItem.Text = k.idType + " - " + k.value;
-                smeItem.Type = "Second";
-                smeItem.Tag = new SubmodelElement() { idShort = k.value };
-                smeItem.Children = new List<TreeNodeData>();
-                treeNodeDataList.Add(smeItem);
+                aas_ref += k.value + " ";
             }
+
+            smeItem = new TreeNodeData();
+            smeItem.EnvIndex = i;
+            smeItem.Text = aas_ref;
+            smeItem.Type = "AAS Link";
+            smeItem.Tag = new SubmodelElement() { idShort = aas_ref };
+            smeItem.Children = new List<TreeNodeData>();
+            treeNodeDataList.Add(smeItem);
 
             rootItem.Children = treeNodeDataList;
 
